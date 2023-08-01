@@ -2,6 +2,9 @@
 import Link from "next/link";
 import * as z from "zod";
 import axios from "axios";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -14,6 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { ButtonLoading } from "@/components/ui/ButtonLoading";
 
 const formSchema = z.object({
   username: z
@@ -43,6 +47,8 @@ const formSchema = z.object({
 });
 
 export default function Signin() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   //define your form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -53,7 +59,19 @@ export default function Signin() {
     },
   });
   //define submit handler
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/users/sign-up", values);
+      toast.success("Successfuly registered");
+      console.log("signup success", response.data);
+      router.push("/sign-in");
+    } catch (error: any) {
+      setLoading(false);
+      toast.error(error.message);
+      console.log("signup fail" + error.message);
+    }
+
     console.log(values);
   }
 
@@ -87,7 +105,7 @@ export default function Signin() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="Email" {...field} />
                     </FormControl>
@@ -109,7 +127,7 @@ export default function Signin() {
                 )}
               />
               <div className="flex justify-end">
-                <Button>Submit</Button>
+                {!loading ? <Button>Submit</Button> : <ButtonLoading />}
               </div>
               <div className="flex justify-center">
                 <Link href="/sign-in" className="underline">

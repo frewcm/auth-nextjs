@@ -2,6 +2,7 @@
 import Link from "next/link";
 import * as z from "zod";
 import axios from "axios";
+import toast from "react-hot-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
@@ -14,9 +15,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { useForm } from "react-hook-form";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { ButtonLoading } from "@/components/ui/ButtonLoading";
+import { useState } from "react";
 
 const formSchema = z.object({
-  username: z
+  email: z
     .string()
     .min(2, {
       message: "must be at least 2 characters.",
@@ -35,18 +39,29 @@ const formSchema = z.object({
 });
 
 export default function Login() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
   //define your form
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
   //define submit handler
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const response = await axios.post("");
-    console.log(values);
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/users/sign-in", values);
+      console.log("signup success", response.data);
+      toast.success("login successful");
+      router.push("/profile");
+    } catch (error: any) {
+      setLoading(false);
+      toast.error(error.message);
+      console.log("login fail" + error.message);
+    }
   }
 
   return (
@@ -63,12 +78,12 @@ export default function Login() {
             >
               <FormField
                 control={form.control}
-                name="username"
+                name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Username</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input placeholder="Username" {...field} />
+                      <Input placeholder="Email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -89,7 +104,7 @@ export default function Login() {
                 )}
               />
               <div className="flex justify-end">
-                <Button>Submit</Button>
+                {!loading ? <Button>Submit</Button> : <ButtonLoading />}
               </div>
               <div className="flex justify-center">
                 <Link href="/sign-up" className="underline">
